@@ -82,7 +82,7 @@ any other session of their engine. Recognised secrets are masked before anything
 
 ## Status
 
-Version 1.12.2. Mnemo runs on macOS and Windows (x64; the desktop app is checked by the CI, not yet tried in real use);
+Version 1.12.3. Mnemo runs on macOS and Windows (x64; the desktop app is checked by the CI, not yet tried in real use);
 Linux has not been used. The CI runs the type check and the tests on Linux, macOS and Windows at each push. What comes
 next is in [coming next](docs/coming-next.md).
 
