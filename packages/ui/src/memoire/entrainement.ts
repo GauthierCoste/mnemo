@@ -127,8 +127,8 @@ export function textesAvancement(
 		pourcentage: a.part === null ? t.sansValeur : t.pourcent(a.part),
 		ecart,
 		volumes,
-		// `qualite` : texte du service
-		qualite: a.part !== null && a.part >= 1 ? (a.qualite ?? ta.volumeAtteintResteQualite) : null,
+		// `qualite` : la phrase entière, avec le critère du service quand il en donne un
+		qualite: a.part !== null && a.part >= 1 ? (a.qualite === null ? ta.volumeAtteintResteQualite : ta.qualite(a.qualite)) : null,
 		sansApprentissage: a.part === null,
 	};
 }

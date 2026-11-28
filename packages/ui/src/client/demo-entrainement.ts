@@ -5,7 +5,8 @@
  * lancent une tâche qui progresse (diffusée par `{ type: 'entrainement' }`), arrêtable ; apprendre finit sur un verdict
  * refusé crédible ; revenir échange les modèles ; message, annuler et « Accepter les sûres » tiennent le banc. Messages et
  * fiches fictifs. `&entrainement=vide` : rien de préparé, note de départ ; `sansjuge` : Claude Code introuvable ;
- * `volume` : volume atteint, la qualité décide (bandeau « Vers les vrais résultats » à 100 %, coche verte).
+ * `volume` : volume atteint, la qualité décide (bandeau « Vers les vrais résultats » à 100 %, coche verte) ; `accepte` : le
+ * dernier apprentissage accepté aux deux niveaux, modèle en service (verdicts en anglais quand l'interface l'est, pour les captures).
  */
 import {
 	ROUTES,
@@ -28,7 +29,7 @@ import {
 import { ErreurApi } from './api.ts';
 
 /** Départs de `&entrainement=`. */
-export type DepartEntrainementDemo = 'vide' | 'sansjuge' | 'volume';
+export type DepartEntrainementDemo = 'vide' | 'sansjuge' | 'volume' | 'accepte';
 
 const JOUR = 86_400_000;
 /** Cadence des fausses tâches : un message préparé, un message pré-jugé, la durée d'un apprentissage. */
@@ -111,6 +112,16 @@ function bancDeDepart(valideLe: string): Cas[] {
 	];
 }
 
+/** `nombre` messages validés (le `valideLe` donné), tirés du faux journal, la première fiche jugée utile, les autres non. */
+function bancValide(nombre: number, valideLe: string): Cas[] {
+	const modeles = journalRestant();
+	return Array.from({ length: nombre }, (_, i) => {
+		const m = modeles[i % modeles.length]!;
+		const jugements = Object.fromEntries(m.candidates.map((c, k) => [c.chemin, k === 0 ? 'pertinente' : 'non_pertinente'])) as Record<string, JugementVue>;
+		return { ...m, jugements, valide: true, valideLe };
+	});
+}
+
 /** Ce qui reste dans le faux journal des sessions, pour « Préparer » ; épuisé, la préparation échoue comme au service. */
 function journalRestant(): Cas[] {
 	return [
@@ -177,18 +188,54 @@ function apprentissageRefuse(date: string, messages: number, sessions: number, p
 	};
 }
 
-export function creerEntrainementDemo(diffuser: (m: MessageServeur) => void, depart?: DepartEntrainementDemo) {
+/**
+ * Un apprentissage accepté aux deux niveaux, sur un banc assez fourni : les % suivent ce qui est réellement utile (table de
+ * fiabilité calibrée). `anglais` : verdict en anglais, comme les captures du site en anglais.
+ */
+function apprentissageAccepte(date: string, anglais: boolean): { note: NoteDuNiveauVue[]; resultat: ResultatApprentissageVue } {
+	const verdict = anglais ? 'Accepted: the percentages are right and Mnemo injects on its own above 90%' : VERDICTS.accepte;
+	const fiabilite = (paires: number) =>
+		[
+			[0, 0.2, 0.09, 0.07],
+			[0.2, 0.4, 0.3, 0.28],
+			[0.4, 0.6, 0.51, 0.49],
+			[0.6, 0.8, 0.7, 0.73],
+			[0.8, 1, 0.92, 0.9],
+		].map(([de, a, pMoyen, frequence], i) => ({ de: de!, a: a!, paires: Math.round(paires * [0.31, 0.2, 0.14, 0.13, 0.22][i]!), pMoyen: pMoyen!, frequence: frequence! }));
+	const niveaux = (['complets', 'sens'] as const).map((niveau) => ({ niveau, paires: niveau === 'complets' ? 142 : 118 }));
+	return {
+		note: niveaux.map(({ niveau }) => ({ niveau, etat: 'accepte' as const, origine: 'appris' as const, date, seuil: 0.9, verdict, criteres: [], refus: [] })),
+		resultat: {
+			date,
+			remplace: true,
+			messages: 64,
+			sessions: 12,
+			niveaux: niveaux.map(({ niveau, paires }) => ({ niveau, accepte: true, verdict, criteres: [], refus: [], paires, fiabilite: fiabilite(paires) })),
+		},
+	};
+}
+
+export function creerEntrainementDemo(diffuser: (m: MessageServeur) => void, depart?: DepartEntrainementDemo, anglais = false) {
 	const vide = depart === 'vide';
 	const avantHier = new Date(Date.now() - 2 * JOUR).toISOString();
 	let banc: Cas[] = vide ? [] : bancDeDepart(new Date(Date.now() - 3 * JOUR).toISOString());
+	// modèle accepté : le banc qui l'a permis, 62 messages validés de plus avant l'apprentissage (64 en tout, comme le rapport)
+	if (depart === 'accepte') banc = [...bancValide(62, new Date(Date.now() - 3 * JOUR).toISOString()), ...banc];
 	let journal = journalRestant();
-	const appris = apprentissageRefuse(avantHier, 2, 2, 6);
+	const hier = new Date(Date.now() - JOUR).toISOString();
+	const appris = depart === 'accepte' ? apprentissageAccepte(hier, anglais) : apprentissageRefuse(avantHier, 2, 2, 6);
 	let note: NoteDuNiveauVue[] = vide ? structuredClone(DEPART) : appris.note;
 	let avant: NoteDuNiveauVue[] | null = vide ? null : structuredClone(DEPART);
 	let resultat: ResultatApprentissageVue | null = vide ? null : appris.resultat;
 	let historique: LigneHistoriqueVue[] = vide
 		? []
-		: [
+		: depart === 'accepte'
+			? [
+					{ date: hier, origine: 'manuel', verdicts: { complets: 'accepte', sens: 'accepte' }, remplace: true },
+					{ date: new Date(Date.now() - 4 * JOUR).toISOString(), origine: 'automatique', verdicts: { complets: 'refuse', sens: 'refuse' }, remplace: false },
+					{ date: new Date(Date.now() - 6 * JOUR).toISOString(), origine: 'manuel', verdicts: { complets: 'refuse', sens: 'refuse' }, remplace: true },
+				]
+			: [
 				{
 					date: new Date(Date.now() - JOUR).toISOString(),
 					origine: 'automatique',
@@ -217,7 +264,9 @@ export function creerEntrainementDemo(diffuser: (m: MessageServeur) => void, dep
 	};
 
 	/** Comme le service : sans apprentissage, les messages « Rien d'utile ici » jugés ; sinon l'avancement crédible d'un petit banc. */
-	const avancement = (): AvancementNoteVue => {
+	const avancement = (): AvancementNoteVue | null => {
+		// comme le service : un modèle accepté n'a plus d'avancement à montrer
+		if (depart === 'accepte') return null;
 		if (depart === 'volume') {
 			return {
 				part: 1,

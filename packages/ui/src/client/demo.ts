@@ -713,7 +713,7 @@ export type OptionsDemo = {
 	coupure?: boolean;
 	/** Suggestion de la règle des 3 sessions sur la première session, sa fiche écartée ici (`&suggestion=1`). */
 	suggestion?: boolean;
-	/** Départ de Mémoire › Entraîner (`&entrainement=vide`, `sansjuge` ou `volume`) ; absent : un banc entamé. */
+	/** Départ de Mémoire › Entraîner, `&entrainement=` : `vide`, `sansjuge`, `volume`, `accepte` ; absent : un banc entamé. */
 	entrainement?: DepartEntrainementDemo;
 	/** Valeur de départ du réglage `interface.langue` (`&langue=en`) ; absent : la langue du système. */
 	langue?: ChoixLangue;
@@ -1284,7 +1284,7 @@ function creerApiDemo(monde: Monde, connexion: FausseConnexion, o: OptionsDemo):
 	};
 	const claudeDesktopDemo = creerClaudeDesktopDemo();
 	const moteursDemo = creerMoteursDemo();
-	const entrainementDemo = creerEntrainementDemo(connexion.diffuser, o.entrainement);
+	const entrainementDemo = creerEntrainementDemo(connexion.diffuser, o.entrainement, o.langue === 'en');
 	/** Route de profil (`:id`) du chemin, décodée ; undefined sinon. */
 	const profilDe = (route: string, chemin: string) => {
 		const id = idDans(route, chemin);

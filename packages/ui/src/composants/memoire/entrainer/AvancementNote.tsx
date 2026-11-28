@@ -34,7 +34,7 @@ export function AvancementNote(p: { avancement: AvancementNoteVue }): ReactNode 
 			{t.qualite !== null && (
 				<>
 					<span className={s.sepAvancement}>·</span>
-					<span>{ta.qualite(t.qualite)}</span>
+					<span>{t.qualite}</span>
 					<CocheVolume titre={ta.volumeAtteint} />
 				</>
 			)}
