@@ -6,6 +6,7 @@ import type { ChoixLangue, EtapeCalcul } from '@mnemo/commun';
 import { ErreurApi, type Api } from './api.ts';
 import { creerEntrainementDemo, type DepartEntrainementDemo } from './demo-entrainement.ts';
 import { lotsDemo } from './demo-lots.ts';
+import { fichesDeVolume } from './demo-volume.ts';
 import { creerModelesDemo } from './demo-modeles.ts';
 import { creerClaudeDesktopDemo } from './demo-claude-desktop.ts';
 import { creerProfilsDemo, type SkillsPourProfils } from './demo-profils.ts';
@@ -457,9 +458,10 @@ function filDuJour(memoire: Memoire, commitsEnPlus: FilVue['commits']): FilVue {
 	return { commits: tous, tronque: false, aConfirmer, montees, modifications: [] };
 }
 
-function creerMonde(): Monde {
+function creerMonde(volume = false): Monde {
 	const maintenant = Date.now();
-	const memoire: Memoire = { fiches: new Map(Object.entries(FICHES_DEMO).map(([c, b]) => [c, analyser(c, b)])), modifieeMs: maintenant };
+	const toutes = volume ? { ...fichesDeVolume(), ...FICHES_DEMO } : FICHES_DEMO;
+	const memoire: Memoire = { fiches: new Map(Object.entries(toutes).map(([c, b]) => [c, analyser(c, b)])), modifieeMs: maintenant };
 	const sessions = SESSIONS_DEMO.map((s) => vueSession(s, maintenant));
 	const servis = new Map<string, EntreeServieVue[]>();
 	for (const s of SESSIONS_DEMO) {
@@ -715,6 +717,8 @@ export type OptionsDemo = {
 	entrainement?: DepartEntrainementDemo;
 	/** Valeur de départ du réglage `interface.langue` (`&langue=en`) ; absent : la langue du système. */
 	langue?: ChoixLangue;
+	/** Quelques centaines de fiches fictives en plus, comme dans un coffre réel (`&volume=1`) : voir `demo-volume.ts`. */
+	volume?: boolean;
 };
 
 function creerApiDemo(monde: Monde, connexion: FausseConnexion, o: OptionsDemo): Api {
@@ -1404,7 +1408,7 @@ function creerApiDemo(monde: Monde, connexion: FausseConnexion, o: OptionsDemo):
 
 /** Client de démonstration : données fictives, aucun jeton, aucun service. */
 export function creerClientDemo(o: OptionsDemo = {}): Client {
-	const monde = creerMonde();
+	const monde = creerMonde(o.volume === true);
 	if (o.coupure) {
 		monde.coupures = [{ ...COUPURE_DEMO, depuisMs: Date.now() - 40 * MINUTE }];
 		monde.sessions = monde.sessions.map((x) => ({ ...x, injectionCoupee: monde.coupures }));

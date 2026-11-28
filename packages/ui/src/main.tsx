@@ -40,9 +40,10 @@ async function creerClient(): Promise<{ client: Client | null; depart?: Depart; 
 		const departEntrainement = entrainement === 'vide' || entrainement === 'sansjuge' || entrainement === 'volume' ? { entrainement: entrainement as 'vide' | 'sansjuge' | 'volume' } : {};
 		// classement vivant : `&coupure=1` (injection automatique coupée par le suivi), `&suggestion=1` (règle des 3 sessions)
 		const classement = { ...(parametres.get('coupure') === '1' ? { coupure: true } : {}), ...(parametres.get('suggestion') === '1' ? { suggestion: true } : {}) };
+		const volume = parametres.get('volume') === '1' ? { volume: true } : {};
 		const langue = parametres.get('langue');
 		const departLangue = estChoixLangue(langue) ? { langue } : {};
-		return { client: creerClientDemo({ ...conflit, ...classement, ...departEntrainement, ...departLangue, ...(modeles !== null ? { modeles } : {}) }), ...(avecEnPlus ? { depart: avecEnPlus } : {}) };
+		return { client: creerClientDemo({ ...conflit, ...classement, ...departEntrainement, ...departLangue, ...volume, ...(modeles !== null ? { modeles } : {}) }), ...(avecEnPlus ? { depart: avecEnPlus } : {}) };
 	}
 	// le jeton de la première ouverture : rangé dans le stockage de cette origine ; la session demandée (`#session=<id>`,
 	// seule ou avec le jeton) : ouverte une fois la liste reçue ; le fragment est retiré de l'adresse tout de suite
@@ -62,7 +63,7 @@ const FICHE_DEMO = 'projets/erp-saas/Module stocks.md';
  * fiche par une « autre fenêtre » 2,5 s après le départ (avis de conflit, 409 à l'enregistrement) ; `&archiviste=1` ouvre
  * le tiroir de l'archiviste, `&palette=<texte>` la palette avec ce texte ; `&modeles=<état>` l'état des modèles locaux
  * (`veille`, `chargement`, `prets`, `vectorisation`, `recherche`, `sens`, `coupes`, `echec`, ou `anime`) ; `&entrainement=`
- * le départ de Mémoire › Entraîner (`vide`, `sansjuge`, `volume`) ; `&langue=en` (ou `fr`) la langue de l'interface ; pour les captures.
+ * le départ de Mémoire › Entraîner (`vide`, `sansjuge`, `volume`) ; `&langue=en` (ou `fr`) la langue de l'interface ; `&volume=1` quelques centaines de fiches en plus ; pour les captures.
  */
 function departDemo(vue: string | null, zoom: number, fiche: string | null, edition: boolean): { depart?: Depart } {
 	const enGrand = zoom > 0 ? { zoom } : {};
