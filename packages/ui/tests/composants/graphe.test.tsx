@@ -354,8 +354,9 @@ describe('Mémoire › Graph 3D', () => {
 			const branche = screen.getByRole('combobox', { name: 'Branche' }) as HTMLSelectElement;
 			expect(branche.value).toBe('personnes');
 			expect((within(branche).getByRole('option', { name: 'Tout le coffre' }) as HTMLOptionElement).disabled).toBe(true);
+			// la simulation de la branche arrive après l'avis : l'attendre (une machine lente voit d'abord une simulation plus petite)
+			await waitFor(() => expect(disposition.creerSimulation.mock.calls.at(-1)![0] as Noeud[]).toHaveLength(2000), ATTENTE);
 			const simules = disposition.creerSimulation.mock.calls.at(-1)![0] as Noeud[];
-			expect(simules).toHaveLength(2000);
 			expect(simules.every((n) => n.branche === 'personnes')).toBe(true);
 		});
 	});
