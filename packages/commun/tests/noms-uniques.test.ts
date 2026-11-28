@@ -35,7 +35,7 @@ const EXCEPTIONS: readonly { fichier: string; symbole: string; texte: string; no
 	{ fichier: 'packages/mnemo/src/infra/plugins-claude.ts', symbole: 'DOSSIER_SKILLS_CLAUDE', texte: 'skills', nombre: 1, raison: 'dossier des skills dans l’arborescence de Claude Code (plugin ou ~/.claude), pas le dossier fixe de la mémoire' },
 ];
 /** Fichiers de données d'exemple : chemins de fiches d'une mémoire fictive (mode démo), pas des noms de code. */
-const DONNEES: readonly string[] = ['packages/ui/src/client/demo-donnees.ts', 'packages/ui/src/client/demo-entrainement.ts'];
+const DONNEES: readonly string[] = ['packages/ui/src/client/demo-donnees.ts', 'packages/ui/src/client/demo-volume.ts', 'packages/ui/src/client/demo-entrainement.ts'];
 
 type Trouve = { fichier: string; symbole: string; ligne: number; texte: string };
 
